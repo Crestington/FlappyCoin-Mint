@@ -31,7 +31,7 @@ QList<TransactionRecord> TransactionRecord::decomposeTransaction(const CWallet *
     uint256 hash = wtx.GetHash();
     std::map<std::string, std::string> mapValue = wtx.mapValue;
 
-    if (nNet > 0 || wtx.IsCoinBase())
+    if (nNet > 0 || wtx.IsCoinBase() || wtx.IsCoinStake())
     {
         //
         // Credit
@@ -55,6 +55,15 @@ QList<TransactionRecord> TransactionRecord::decomposeTransaction(const CWallet *
                     // Received by IP connection (deprecated features), or a multisignature or other non-simple transaction
                     sub.type = TransactionRecord::RecvFromOther;
                     sub.address = mapValue["from"];
+                }
+                if (wtx.IsCoinStake())
+                {
+                    // Stake generation
+                    sub.credit = wtx.GetValueOut();
+                    sub.debit=-nDebit;
+                    sub.type = TransactionRecord::StakeMint;
+                    parts.append(sub);
+                    break;
                 }
                 if (wtx.IsCoinBase())
                 {
@@ -167,7 +176,7 @@ void TransactionRecord::updateStatus(const CWalletTx &wtx)
         if (wtx.nLockTime < LOCKTIME_THRESHOLD)
         {
             status.status = TransactionStatus::OpenUntilBlock;
-            status.open_for = wtx.nLockTime - nBestHeight + 1;
+            status.open_for = nBestHeight - wtx.nLockTime;
         }
         else
         {
@@ -192,7 +201,7 @@ void TransactionRecord::updateStatus(const CWalletTx &wtx)
     }
 
     // For generated transactions, determine maturity
-    if(type == TransactionRecord::Generated)
+    if(type == TransactionRecord::Generated || type == TransactionRecord::StakeMint)
     {
         int64 nCredit = wtx.GetCredit(true);
         if (nCredit == 0)

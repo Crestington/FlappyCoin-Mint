@@ -7,6 +7,7 @@
 namespace Ui {
     class SendCoinsDialog;
 }
+class BitcoinGUI;
 class WalletModel;
 class SendCoinsEntry;
 class SendCoinsRecipient;
@@ -30,7 +31,6 @@ public:
      */
     QWidget *setupTabChain(QWidget *prev);
 
-    void setAddress(const QString &address);
     void pasteEntry(const SendCoinsRecipient &rv);
     bool handleURI(const QString &uri);
 
@@ -39,13 +39,17 @@ public slots:
     void reject();
     void accept();
     SendCoinsEntry *addEntry();
+    void addRecurring();
     void updateRemoveEnabled();
-    void setBalance(qint64 balance, qint64 unconfirmedBalance, qint64 immatureBalance);
+    void setBalance(qint64 balance, qint64 stake, qint64 unconfirmedBalance, qint64 immatureBalance, qint64 mintedBalance);
 
 private:
     Ui::SendCoinsDialog *ui;
     WalletModel *model;
     bool fNewRecipientAllowed;
+    BitcoinGUI *bitcoinGui;
+
+    void updateBalance(qint64 balance);
 
 private slots:
     void on_sendButton_clicked();
